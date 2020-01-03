@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { makeStyles } from '@material-ui/core/styles';
 import AppBar from '@material-ui/core/AppBar';
@@ -8,6 +8,8 @@ import Typography from '@material-ui/core/Typography';
 import Box from '@material-ui/core/Box';
 
 import Papa from 'papaparse';
+
+import Movies from '../movies'
 
 function TabPanel(props) {
   const { children, value, index, ...other } = props;
@@ -56,18 +58,38 @@ const useStyles = makeStyles(theme => ({
 
 export default function Main() {
   const classes = useStyles();
+  
   const [value, setValue] = React.useState(0);
+  const [users, setUsers] = React.useState([]);
+  const [movies, setMovies] = React.useState([]);
+  const [ratings, setRatings] = React.useState([]);
 
   const handleChange = (event, newValue) => {
     setValue(newValue);
   };
 
-  Papa.parse('https://raw.githubusercontent.com/belalmoh/ml-project/master/src/resources/dataset/ratings.csv', {
-    download: true,
-    complete: (results, file) => {
-      console.log(results.data);
-    }
-  })
+
+  // Hook Effect of Users
+  useEffect(() => {
+    Papa.parse('http://localhost:5000/api/users', {
+      download: true,
+      complete: (results, file) => {
+        let result = JSON.parse(results.data);
+        setUsers([...users, ...result])
+      }
+    })
+  }, [])
+  
+  // Hook Effect of Movies
+  useEffect(() => {
+    Papa.parse('http://localhost:5000/api/movies', {
+      download: true,
+      complete: (results, file) => {
+        let result = JSON.parse(results.data);
+        setMovies([...movies, ...result])
+      }
+    })
+  }, [])
 
   return (
     <div className={classes.root}>
@@ -78,10 +100,10 @@ export default function Main() {
           </Tabs>
       </AppBar>
       <TabPanel value={value} index={0}>
-        Users appear here
+        
       </TabPanel>
       <TabPanel value={value} index={1}>
-        Movies appear here
+        <Movies data={movies} />
       </TabPanel>
     </div>
   );
