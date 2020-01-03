@@ -17,8 +17,11 @@ app.config['CORS_HEADERS'] = 'Content-Type'
 @cross_origin()
 def get_csv(csv_id):
 
-    filename = f"./datasets/{csv_id}.csv"
+    filename = "./datasets/dataset.csv"
     dataset = pd.read_csv(filename, dtype=str)
+
+    if csv_id == "movies":
+        dataset = dataset[["movieId","title", "genres"]]
 
     try:
         return json.dumps({
@@ -43,8 +46,9 @@ def get_users():
 @app.route("/api/movies/")
 @cross_origin()
 def get_movies():
-    filename = "./datasets/movies.csv"
+    filename = "./datasets/dataset.csv"
     dataset = pd.read_csv(filename, dtype=str)
+    dataset = dataset[["movieId", "title", "genres"]]
 
     try:
         return json.dumps(dataset.to_dict(orient="records"))
@@ -67,13 +71,14 @@ def get_movies():
 @app.route("/api/algorithm/collab/movie/<movie_id>/<k_neighboors>")
 @cross_origin()
 def find_similar_knn(movie_id, k_neighboors):
-    filename = "./datasets/movies.csv"
+    filename = "./datasets/dataset.csv"
     movies = pd.read_csv(filename, dtype=str)
 
     result = getNeighbors(movies, int(movie_id), int(k_neighboors))
+
     parsed_result = []
-    for item in result:
-        parsed_result.append({"movieId": item["movieId"], "title": item["title"], "genres": item["genres"]})
+    for i in range(len(result)):
+        parsed_result.append({"movieId": result[i]["movieId"].values[0], "title": result[i]["title"].values[0], "genres": result[i]["genres"].values[0]})
 
     try:
         return json.dumps(parsed_result)
