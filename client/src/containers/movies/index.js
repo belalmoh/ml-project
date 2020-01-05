@@ -14,8 +14,10 @@ export default function Movies({data}) {
   const [progress, setProgress] = React.useState(false);
   const [movieId, setMovieId] = React.useState(false);
   const [kNeighbors, setKNeighbors] = React.useState(5);
+  const [kClusters, setKClusters] = React.useState(5);
 
-  const [knnResult, setKnnResult] = React.useState([]);
+  const [finalResult, setFinalResult] = React.useState([]);
+  const [kmeansResult, setKmeansResult] = React.useState([]);
 
   const handleOpen = (movieId) => {
     setOpen(true);
@@ -29,20 +31,37 @@ export default function Movies({data}) {
   const handleKNeighborsChange = ({target: {value}}) => {
     setKNeighbors(value);
   }
+  
+  const handleKClustersChange = ({target: {value}}) => {
+    setKClusters(value);
+  }
 
   useEffect(() => {
-    setKnnResult([]);
-  }, [movieId, kNeighbors])
+    setFinalResult([]);
+  }, [movieId, kNeighbors, kClusters])
   
   const getSimilarMoviesUsingKNN = () => {
     setProgress(true);
-    setKnnResult([]);
-    Papa.parse(`http://localhost:5000/api/algorithm/collab/movie/${movieId}/${kNeighbors}`, {
+    setFinalResult([]);
+    Papa.parse(`http://localhost:5000/api/algorithm/knn/movie/${movieId}/${kNeighbors}`, {
       download: true,
       complete: (results, file) => {
         setProgress(false);
         let result = JSON.parse(results.data);
-        setKnnResult([...knnResult, ...result])
+        setFinalResult([...finalResult, ...result])
+      }
+    })
+  }
+  
+  const getSimilarMoviesUsingKMeans = () => {
+    setProgress(true);
+    setFinalResult([]);
+    Papa.parse(`http://localhost:5000/api/algorithm/kmeans/movie/${movieId}/${kClusters}`, {
+      download: true,
+      complete: (results, file) => {
+        setProgress(false);
+        let result = JSON.parse(results.data);
+        setFinalResult([...finalResult, ...result])
       }
     })
   }
@@ -67,21 +86,30 @@ export default function Movies({data}) {
               </Button>
               <Modal open={open} handleClose={handleClose}>
                   <div>
-                    <h2 id="transition-modal-title">Collaborative Approach</h2>
+                    <h2 id="transition-modal-title">Start Recommendation</h2>
                     <Grid container spacing={6}>
                       <Grid item xs={6}>
-                        <Button variant="outlined" color="secondary" onClick={() => getSimilarMoviesUsingKNN()}>
+                        <Button variant="outlined" disabled={progress} color="secondary" onClick={() => getSimilarMoviesUsingKNN()}>
                           {progress ? 
                             <CircularProgress color="secondary" size={25} /> : `KNN` 
                           }
                         </Button>
                         <br />
-                        <TextField id="standard-basic" label="K Value" onChange={handleKNeighborsChange} defaultValue={kNeighbors} disabled={progress}/>
+                        <TextField id="standard-basic-knn" label="K Value" onChange={handleKNeighborsChange} defaultValue={kNeighbors} disabled={progress}/>
+                      </Grid>
+                      <Grid item xs={6}>
+                        <Button variant="outlined" disabled={progress} color="secondary" onClick={() => getSimilarMoviesUsingKMeans()}>
+                          {progress ? 
+                            <CircularProgress color="secondary" size={25} /> : `KMeans` 
+                          }
+                        </Button>
+                        <br />
+                        <TextField id="standard-basic-kmeans" label="K Value" onChange={handleKClustersChange} defaultValue={kClusters} disabled={progress}/>
                       </Grid>
                     </Grid>
                     <br />
-                    {knnResult.length > 0 && !progress ? 
-                      <Movies data={knnResult}/>
+                    {finalResult.length > 0 && !progress ? 
+                      <Movies data={finalResult}/>
                       :
                       ''
                     }
